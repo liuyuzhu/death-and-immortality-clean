@@ -344,6 +344,7 @@
         <span class="legend-item"><span class="legend-dot church"></span> ⛪ Church</span>
         <span class="legend-item"><span class="legend-dot train"></span> 🚆 Train Station</span>
         <span class="legend-item"><span class="legend-dot iti"></span> 🏠 ITI Campus / Venue</span>
+        <span class="legend-item" style="gap:6px"><span style="width:16px;height:3px;background:#e04444;border-radius:2px;display:inline-block"></span> 🚶 Walking Route</span>
       </div>
     </div>
     
@@ -461,19 +462,56 @@
       marker.bindPopup('<b>' + loc.name + '</b><br>' + loc.desc);
     });
 
-    var routePoints = [
-      [47.99263, 16.33223],
-      [47.9923, 16.3350],
-      [47.99430, 16.33504],
-      [47.9956, 16.3384],
+    // Leg 1: Trumau Bahnhof → ITI Campus (walking, ~374m)
+    var leg1 = [
+      [47.99263, 16.33218],
+      [47.99277, 16.33215],
+      [47.99259, 16.33217],
+      [47.99259, 16.33221],
+      [47.99262, 16.33249],
+      [47.99297, 16.33248],
+      [47.99336, 16.33241],
+      [47.99346, 16.33242],
+      [47.99371, 16.33313],
+      [47.99377, 16.33328],
+      [47.99397, 16.33389],
+      [47.99410, 16.33428],
+      [47.99424, 16.33465],
+      [47.99436, 16.33499]
+    ];
+
+    L.polyline(leg1, {
+      color: '#e04444',
+      weight: 4,
+      opacity: 0.85
+    }).addTo(map);
+
+    // Leg 2: ITI Campus → Church (walking, ~702m)
+    var leg2 = [
+      [47.99436, 16.33499],
+      [47.99455, 16.33553],
+      [47.99460, 16.33567],
+      [47.99466, 16.33584],
+      [47.99472, 16.33596],
+      [47.99496, 16.33633],
+      [47.99528, 16.33680],
+      [47.99559, 16.33724],
+      [47.99606, 16.33793],
+      [47.99610, 16.33799],
+      [47.99595, 16.33853],
+      [47.99580, 16.33897],
+      [47.99561, 16.33952],
+      [47.99717, 16.34083],
+      [47.99706, 16.34110],
+      [47.99688, 16.34166],
+      [47.99685, 16.34175],
       [47.99684, 16.34175]
     ];
 
-    L.polyline(routePoints, {
-      color: '#c4a35a',
-      weight: 2,
-      opacity: 0.5,
-      dashArray: '8, 6'
+    L.polyline(leg2, {
+      color: '#e04444',
+      weight: 4,
+      opacity: 0.85
     }).addTo(map);
 
     var group = L.featureGroup(
