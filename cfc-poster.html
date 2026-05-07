@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFC Household Meeting · Feast of the Ascension</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;600;700&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+      background: linear-gradient(135deg, #fdf5e6 0%, #faf0d7 40%, #f5e6c8 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    
+    .poster {
+      width: 640px;
+      background: linear-gradient(180deg, #fdf5e6 0%, #faf0d7 60%, #f5e6c8 100%);
+      border-radius: 20px;
+      box-shadow: 0 12px 50px rgba(120, 80, 30, 0.15), 0 0 60px rgba(196, 163, 90, 0.08);
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(196, 163, 90, 0.2);
+    }
+
+    /* Ascension icon background — subtle watermark style */
+    .ascension-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 0;
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Menologion_Basilii_010.jpg/1280px-Menologion_Basilii_010.jpg');
+      background-size: cover;
+      background-position: center 30%;
+      background-repeat: no-repeat;
+    }
+
+    /* Golden glow overlay at top */
+    .poster::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 350px;
+      height: 180px;
+      background: radial-gradient(ellipse, rgba(255, 215, 140, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .corner {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-color: rgba(196, 163, 90, 0.25);
+      border-style: solid;
+      z-index: 2;
+    }
+    .corner.tl { top: 16px; left: 16px; border-width: 3px 0 0 3px; }
+    .corner.tr { top: 16px; right: 16px; border-width: 3px 3px 0 0; }
+    .corner.bl { bottom: 16px; right: 16px; border-width: 0 3px 3px 0; }
+    .corner.br { bottom: 16px; left: 16px; border-width: 0 0 3px 3px; }
+    
+    .header {
+      text-align: center;
+      padding: 35px 30px 18px;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .cross-top {
+      font-size: 36px;
+      color: #c4a35a;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 10px rgba(196, 163, 90, 0.2));
+    }
+    
+    .line-deco {
+      width: 90px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #c4a35a, transparent);
+      margin: 8px auto;
+    }
+    
+    .title {
+      font-size: 40px;
+      font-weight: 700;
+      color: #5a3c1e;
+      letter-spacing: 4px;
+      margin-bottom: 6px;
+    }
+    
+    .subtitle {
+      font-size: 20px;
+      color: #8b7355;
+      font-weight: 600;
+      letter-spacing: 2px;
+      font-style: italic;
+    }
+    
+    .date-section {
+      text-align: center;
+      margin: 14px 40px;
+      padding: 14px;
+      background: rgba(196, 163, 90, 0.08);
+      border-radius: 12px;
+      border: 1px solid rgba(196, 163, 90, 0.15);
+      position: relative;
+      z-index: 2;
+    }
+    
+    .date-main { font-size: 21px; font-weight: 700; color: #5a3c1e; letter-spacing: 0.5px; }
+    .date-sub { font-size: 14px; color: #8b7355; margin-top: 3px; font-style: italic; }
+    
+    /* Map Section */
+    .map-section {
+      padding: 16px 30px;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .map-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #5a3c1e;
+      margin-bottom: 12px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    #map {
+      width: 100%;
+      height: 350px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(90, 60, 30, 0.12);
+      border: 1px solid rgba(196, 163, 90, 0.15);
+    }
+    
+    .map-legend {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 12px;
+      padding: 0 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #6b5438;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      border: 2px solid rgba(255,255,255,0.8);
+    }
+    .legend-dot.church { background: #c4a35a; }
+    .legend-dot.train { background: #5a8ec4; }
+    .legend-dot.iti { background: #6ba85a; }
+    
+    /* Events */
+    .events-section {
+      padding: 16px 30px;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .event {
+      margin-bottom: 14px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 12px;
+      border-left: 4px solid #c4a35a;
+      position: relative;
+    }
+    
+    .event .time {
+      font-size: 20px;
+      font-weight: 700;
+      color: #5a3c1e;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .event .event-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #6b5438;
+      margin: 4px 0;
+    }
+    
+    .event .location {
+      font-size: 13px;
+      color: #8b7355;
+      line-height: 1.6;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .event .icon { font-size: 18px; margin-right: 6px; }
+    
+    .event .pin {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #c4a35a;
+      background: rgba(196, 163, 90, 0.08);
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Transport */
+    .transport-section {
+      padding: 14px 30px;
+      margin: 0 30px;
+      background: rgba(196, 163, 90, 0.06);
+      border-radius: 12px;
+      position: relative;
+      z-index: 2;
+      border: 1px solid rgba(196, 163, 90, 0.1);
+    }
+    
+    .transport-section h4 {
+      font-size: 15px;
+      color: #5a3c1e;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    
+    .route-steps {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .route-step {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #6b5438;
+      background: rgba(255, 255, 255, 0.5);
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .route-arrow { color: #c4a35a; font-size: 16px; font-weight: bold; }
+    
+    /* Blessing */
+    .blessing {
+      text-align: center;
+      padding: 18px 30px 12px;
+      font-size: 16px;
+      color: #8b7355;
+      font-style: italic;
+      line-height: 1.7;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .contact-section {
+      text-align: center;
+      padding: 10px 30px 28px;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .contact-name {
+      font-weight: 700;
+      color: #5a3c1e;
+      font-size: 19px;
+    }
+    
+    .contact-phone {
+      font-size: 16px;
+      color: #c4a35a;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    
+    .footer-line {
+      width: 100px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c4a35a, transparent);
+      margin: 12px auto;
+    }
+
+    @media (max-width: 680px) {
+      .poster { width: 100%; }
+      .title { font-size: 32px; letter-spacing: 3px; }
+      .map-legend { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="ascension-bg"></div>
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    
+    <div class="header">
+      <div class="cross-top">☦</div>
+      <div class="line-deco"></div>
+      <div class="title">CFC Household Meeting</div>
+      <div class="subtitle">— Feast of the Ascension —</div>
+    </div>
+    
+    <div class="date-section">
+      <div class="date-main">Thursday, May 14, 2026</div>
+      <div class="date-sub">Feast of the Ascension</div>
+    </div>
+    
+    <div class="map-section">
+      <div class="map-title">📍 Getting Here</div>
+      <div id="map"></div>
+      <div class="map-legend">
+        <span class="legend-item"><span class="legend-dot church"></span> ⛪ Church</span>
+        <span class="legend-item"><span class="legend-dot train"></span> 🚆 Train Station</span>
+        <span class="legend-item"><span class="legend-dot iti"></span> 🏠 ITI Campus / Venue</span>
+      </div>
+    </div>
+    
+    <div class="events-section">
+      <div class="event">
+        <div class="time">11:00 – 12:00</div>
+        <div class="event-title"><span class="icon">⛪</span> Children's Mass</div>
+        <div class="location">
+          <strong>Kirchengasse 12, 2521 Trumau</strong>
+        </div>
+        <span class="pin">📍 Church</span>
+      </div>
+      
+      <div class="event">
+        <div class="time">13:00</div>
+        <div class="event-title"><span class="icon">🏠</span> Family Gathering & Lunch</div>
+        <div class="location">
+          <strong>Bahnstraße 5, 1/14 (3rd Floor), 2521 Trumau (ITI Campus)</strong>
+        </div>
+        <span class="pin">📍 Venue</span>
+      </div>
+    </div>
+    
+    <div class="transport-section">
+      <h4>🚆 How to Get Here</h4>
+      <div class="route-steps">
+        <span class="route-step">🏙️ Wien Hbf</span>
+        <span class="route-arrow">→</span>
+        <span class="route-step">🚆 R95 (:27)</span>
+        <span class="route-arrow">→</span>
+        <span class="route-step">📍 Trumau Bahnhof</span>
+        <span class="route-arrow">→</span>
+        <span class="route-step">🚶 3 min</span>
+        <span class="route-arrow">→</span>
+        <span class="route-step">🏠 ITI Campus / Venue</span>
+        <span class="route-arrow">→</span>
+        <span class="route-step">🚶 10 min</span>
+        <span class="route-arrow">→</span>
+        <span class="route-step">⛪ Church</span>
+      </div>
+    </div>
+    
+    <div class="blessing">
+      🙏 You are warmly invited to celebrate<br>the Feast of the Ascension with us.<br>
+      Children are especially welcome!
+    </div>
+    
+    <div class="contact-section">
+      <div class="footer-line"></div>
+      <div class="contact-name">Stephen Liu &amp; Jenny Jiang</div>
+      <div class="contact-phone">📞 +43 688 641 77944</div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    var map = L.map('map', {
+      center: [47.9946, 16.3395],
+      zoom: 15,
+      scrollWheelZoom: false,
+      zoomControl: true
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19
+    }).addTo(map);
+
+    function createMarkerIcon(color, label) {
+      return L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="'
+          + 'background:' + color + ';'
+          + 'width:28px;height:28px;border-radius:50%;'
+          + 'display:flex;align-items:center;justify-content:center;'
+          + 'border:3px solid white;'
+          + 'box-shadow:0 2px 6px rgba(0,0,0,0.3);'
+          + 'font-size:14px;'
+          + '">' + label + '</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -18]
+      });
+    }
+
+    var locations = [
+      {
+        coords: [47.99684, 16.34175],
+        name: '⛪ Church — Kirchengasse 12',
+        desc: "Children's Mass 11:00-12:00",
+        color: '#c4a35a',
+        icon: '⛪'
+      },
+      {
+        coords: [47.99263, 16.33223],
+        name: '🚆 Trumau Bahnhof',
+        desc: 'R95 from Vienna',
+        color: '#5a8ec4',
+        icon: '🚆'
+      },
+      {
+        coords: [47.99430, 16.33504],
+        name: '🏠 ITI Campus / Venue',
+        desc: 'Bahnstraße 5, 1/14 (3F) · Gathering & Lunch',
+        color: '#6ba85a',
+        icon: '🏠'
+      }
+    ];
+
+    locations.forEach(function(loc) {
+      var marker = L.marker(loc.coords, {
+        icon: createMarkerIcon(loc.color, loc.icon)
+      }).addTo(map);
+      marker.bindPopup('<b>' + loc.name + '</b><br>' + loc.desc);
+    });
+
+    var routePoints = [
+      [47.99263, 16.33223],
+      [47.9923, 16.3350],
+      [47.99430, 16.33504],
+      [47.9956, 16.3384],
+      [47.99684, 16.34175]
+    ];
+
+    L.polyline(routePoints, {
+      color: '#c4a35a',
+      weight: 2,
+      opacity: 0.5,
+      dashArray: '8, 6'
+    }).addTo(map);
+
+    var group = L.featureGroup(
+      locations.map(function(l) { return L.marker(l.coords); })
+    );
+    map.fitBounds(group.getBounds().pad(0.15));
+  </script>
+</body>
+</html>
